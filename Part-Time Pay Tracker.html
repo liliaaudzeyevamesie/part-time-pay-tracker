@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pay Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF2F4;
+    --bg-alt:#F6E7EC;
+    --card:#FFFFFF;
+    --ink:#4A3B42;
+    --ink-soft:#8C7680;
+    --accent:#D98CA0;
+    --accent-soft:#F3D3DC;
+    --accent-deep:#B8617A;
+    --line:#EFD9E0;
+    --shadow: 0 1px 2px rgba(74,59,66,0.06), 0 10px 28px -14px rgba(74,59,66,0.22);
+  }
+  [data-theme="lavender"]{
+    --bg:#F5F2FA; --bg-alt:#EAE3F5; --card:#FFFFFF;
+    --ink:#42394F; --ink-soft:#847A93;
+    --accent:#A98CD9; --accent-soft:#DED0F3; --accent-deep:#7E5FB8;
+    --line:#E1D6F0;
+  }
+  [data-theme="sage"]{
+    --bg:#F2F6F1; --bg-alt:#E4EDE2; --card:#FFFFFF;
+    --ink:#3C4A3D; --ink-soft:#7C8C7D;
+    --accent:#8FAE7E; --accent-soft:#D6E5D0; --accent-deep:#63845A;
+    --line:#DAE6D6;
+  }
+  [data-theme="blue"]{
+    --bg:#F0F5FA; --bg-alt:#DFEBF5; --card:#FFFFFF;
+    --ink:#33465A; --ink-soft:#7791A6;
+    --accent:#7FAAD1; --accent-soft:#CFE0F0; --accent-deep:#4F7EA8;
+    --line:#D3E2EF;
+  }
+  [data-theme="peach"]{
+    --bg:#FDF3EC; --bg-alt:#FAE5D5; --card:#FFFFFF;
+    --ink:#5A4133; --ink-soft:#A0806C;
+    --accent:#E8A26E; --accent-soft:#F6D9BE; --accent-deep:#C97D46;
+    --line:#F0D9C2;
+  }
+  [data-theme="mint"]{
+    --bg:#EFF7F3; --bg-alt:#DCEEE5; --card:#FFFFFF;
+    --ink:#33534A; --ink-soft:#75988C;
+    --accent:#6EBBA0; --accent-soft:#C7E7DA; --accent-deep:#469278;
+    --line:#CDE7DB;
+  }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter', sans-serif; transition: background 0.3s ease; }
+  .app{ display:flex; min-height:100vh; }
+
+  .sidebar{
+    width: 250px; background: var(--card); border-right: 1px solid var(--line);
+    padding: 26px 20px; flex-shrink:0; position: sticky; top:0; height:100vh;
+    overflow-y:auto; transition: transform 0.25s ease; z-index: 40;
+  }
+  .sidebar .brand{ font-family:'Fraunces', serif; font-weight:700; font-size: 22px; color: var(--ink); margin-bottom: 4px; display:flex; align-items:center; gap:8px; }
+  .sidebar .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); display:inline-block; }
+  .sidebar .tagline{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:26px; }
+
+  .nav-item{
+    display:flex; align-items:center; gap:10px; width:100%; padding: 11px 12px; border-radius: 10px;
+    border:none; background:transparent; color: var(--ink); font-family:'Inter', sans-serif; font-weight:500;
+    font-size: 14px; text-align:left; cursor:pointer; margin-bottom: 4px; transition: background 0.15s ease;
+  }
+  .nav-item .ic{ font-size:16px; width:20px; text-align:center; }
+  .nav-item:hover{ background: var(--bg-alt); }
+  .nav-item.active{ background: var(--accent-soft); color: var(--accent-deep); font-weight:600; }
+
+  .sidebar hr{ border:none; border-top:1px solid var(--line); margin: 18px 0; }
+  .theme-row{ display:flex; gap:8px; margin-top:8px; }
+  .theme-dot{ width: 28px; height:28px; border-radius:50%; border: 2px solid transparent; cursor:pointer; }
+  .theme-dot.active{ border-color: var(--ink); }
+  .theme-dot[data-theme-btn="blush"]{ background: linear-gradient(135deg,#D98CA0,#F3D3DC); }
+  .theme-dot[data-theme-btn="lavender"]{ background: linear-gradient(135deg,#A98CD9,#DED0F3); }
+  .theme-dot[data-theme-btn="sage"]{ background: linear-gradient(135deg,#8FAE7E,#D6E5D0); }
+  .theme-dot[data-theme-btn="blue"]{ background: linear-gradient(135deg,#7FAAD1,#CFE0F0); }
+  .theme-dot[data-theme-btn="peach"]{ background: linear-gradient(135deg,#E8A26E,#F6D9BE); }
+  .theme-dot[data-theme-btn="mint"]{ background: linear-gradient(135deg,#6EBBA0,#C7E7DA); }
+
+  .menu-toggle{
+    display:none; position: fixed; top:16px; left:16px; z-index:50;
+    background: var(--card); border:1px solid var(--line); border-radius: 10px;
+    width:40px; height:40px; font-size:18px; cursor:pointer; box-shadow: var(--shadow);
+  }
+
+  .main{ flex:1; padding: 32px 36px 80px; max-width: 980px; margin:0 auto; width:100%; }
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  h2.page-title{ font-family:'Fraunces', serif; font-weight:600; font-size: 26px; margin: 0 0 4px; }
+  p.page-sub{ color: var(--ink-soft); font-size:13.5px; margin:0 0 22px; }
+
+  .card{ background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; margin-bottom: 20px; }
+  .card h3{ font-family:'Fraunces', serif; font-size:17px; font-weight:600; margin:0 0 4px; }
+  .card .sub{ font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; }
+
+  .stub{
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep)); color: #fff; border-radius: 18px;
+    padding: 24px 26px; margin-bottom: 22px; display:flex; justify-content:space-between; align-items:center;
+    gap:20px; flex-wrap:wrap; box-shadow: var(--shadow);
+  }
+  .stub .eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:0.08em; opacity:0.85; margin:0 0 6px; font-family:'Quicksand',sans-serif; font-weight:600;}
+  .stub h3{ font-family:'Fraunces', serif; font-weight:700; font-size:16px; margin:0 0 8px; }
+  .stub .amount{ font-family:'Fraunces', serif; font-size:36px; font-weight:700; }
+  .stub .meta{ font-size:12px; opacity:0.85; margin-top:4px; }
+
+  .cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .cal-header .month-label{ font-family:'Fraunces', serif; font-size:20px; font-weight:600; }
+  .cal-nav{ display:flex; gap:8px; }
+  .cal-nav button{ background: var(--bg-alt); border:none; border-radius:8px; width:34px; height:34px; cursor:pointer; font-size:15px; color:var(--ink); }
+  .cal-nav button:hover{ background: var(--accent-soft); }
+
+  .cal-grid{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; }
+  .cal-dow{ text-align:center; font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em; padding-bottom:6px; font-family:'Quicksand',sans-serif; font-weight:600;}
+  .cal-day{
+    background: var(--bg-alt); border-radius: 12px; min-height: 64px; padding: 8px; cursor:pointer;
+    border: 1px solid transparent; transition: border 0.12s ease, background 0.12s ease; display:flex; flex-direction:column; gap:4px;
+  }
+  .cal-day.empty{ background:transparent; cursor:default; }
+  .cal-day:hover:not(.empty){ border-color: var(--accent); }
+  .cal-day.today{ border-color: var(--accent-deep); border-width:2px; }
+  .cal-day.expanded{ background: var(--accent-soft); }
+  .cal-day .daynum{ font-family:'Quicksand',sans-serif; font-weight:600; font-size:13px; }
+  .cal-day .shift-chip{ font-size:10.5px; padding:2px 6px; border-radius:6px; color:#fff; font-family:'Inter',sans-serif; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal-day .more{ font-size:10px; color:var(--ink-soft); }
+  .cal-day .cutoff-dot{ position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%; }
+  .cal-day{ position:relative; }
+
+  .day-expand{ grid-column: 1 / -1; background: var(--card); border: 1px solid var(--accent); border-radius: 14px; padding: 18px 20px; margin: 18px 0 8px; animation: fadeIn 0.15s ease; }
+  .day-expand h4{ font-family:'Fraunces', serif; font-size:16px; margin:0 0 12px; }
+  .shift-entry{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background: var(--bg-alt); margin-bottom:8px; font-size:13px; flex-wrap:wrap; }
+  .shift-entry .swatch{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .shift-entry .info{ flex:1; min-width:140px; }
+  .shift-entry .pay{ font-family:'Fraunces',serif; font-weight:600; font-size:13.5px; }
+  .shift-entry .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:14px; }
+  .shift-entry .del:hover{ color:#B4553F; }
+
+  form.inline{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-top:8px; }
+  label.field{ display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:var(--ink-soft); flex:1; min-width:110px; font-family:'Quicksand',sans-serif; font-weight:500;}
+  input, select{ font-family:'Inter', sans-serif; font-size:13.5px; border: 1px solid var(--line); border-radius:9px; padding: 9px 11px; background: var(--bg); color: var(--ink); }
+  input:focus, select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .color-pick{ display:flex; gap:6px; }
+  .color-pick .cdot{ width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+  .color-pick .cdot.sel{ border-color: var(--ink); }
+
+  button.btn{ font-family:'Quicksand', sans-serif; font-weight:600; font-size:13.5px; border:none; border-radius:10px; padding:10px 18px; background: var(--accent); color:#fff; cursor:pointer; transition: background 0.15s ease, transform 0.05s ease; }
+  button.btn:hover{ background: var(--accent-deep); }
+  button.btn:active{ transform: scale(0.98); }
+  button.btn.ghost{ background: var(--bg-alt); color: var(--ink); }
+  button.btn.ghost:hover{ background: var(--accent-soft); }
+
+  .job-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--bg-alt); }
+  .job-row:last-child{ border-bottom:none; }
+  .swatch{ width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .job-row .name{ font-weight:600; font-size:14px; flex:1; }
+  .job-row .rate{ font-family:'Inter',sans-serif; font-size:12.5px; color:var(--ink-soft); }
+  .job-row .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:16px; padding:4px 6px; }
+  .job-row .del:hover{ color:#B4553F; }
+
+  .period-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 12px 14px; border-radius:12px; background:var(--bg-alt); margin-bottom:10px; }
+  .period-row .pname{ font-weight:600; font-size:14px; }
+  .period-row .prange{ font-size:12px; color:var(--ink-soft); }
+  .period-row .ptotal{ font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:var(--accent-deep); }
+  .period-row .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:15px; }
+
+  .empty{ text-align:center; padding:24px 10px; color:var(--ink-soft); font-size:13.5px; }
+  label.checkline{ flex-direction:row; align-items:center; gap:8px; }
+  label.checkline input[type=checkbox]{ width:16px; height:16px; }
+
+  @media (max-width: 860px){
+    .sidebar{ position:fixed; left:0; transform: translateX(-100%); box-shadow: var(--shadow); }
+    .sidebar.open{ transform: translateX(0); }
+    .menu-toggle{ display:block; }
+    .main{ padding: 76px 16px 60px; }
+    .cal-day{ min-height:52px; }
+  }
+</style>
+</head>
+<body data-theme="blush">
+
+<button class="menu-toggle" id="menuToggle">☰</button>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="dot"></span>Pay Tracker</div>
+    <div class="tagline">track your wages</div>
+
+    <button class="nav-item active" data-panel="calendar"><span class="ic">📅</span>Calendar</button>
+    <button class="nav-item" data-panel="jobs"><span class="ic">💼</span>Jobs</button>
+    <button class="nav-item" data-panel="periods"><span class="ic">🗂️</span>Pay periods</button>
+    <button class="nav-item" data-panel="stats"><span class="ic">📊</span>Stats</button>
+
+    <hr>
+    <div class="tagline" style="margin-bottom:8px;">Colour theme</div>
+    <div class="theme-row">
+      <div class="theme-dot active" data-theme-btn="blush" title="Blush"></div>
+      <div class="theme-dot" data-theme-btn="lavender" title="Lavender"></div>
+      <div class="theme-dot" data-theme-btn="sage" title="Sage"></div>
+      <div class="theme-dot" data-theme-btn="blue" title="Blue"></div>
+      <div class="theme-dot" data-theme-btn="peach" title="Peach"></div>
+      <div class="theme-dot" data-theme-btn="mint" title="Mint"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <section class="panel active" id="panel-calendar">
+      <h2 class="page-title">Calendar</h2>
+      <p class="page-sub">Click a day to log a shift by start and end time. Hours are calculated for you.</p>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <label class="field" style="flex:none; min-width:220px;">Viewing period
+          <select id="calPeriodSelect"><option value="">No pay period selected</option></select>
+        </label>
+        <div id="funTotal" style="font-family:'IBM Plex Mono', 'Inter', monospace; font-size:11.5px; color:var(--ink-soft); background:var(--bg-alt); padding:6px 12px; border-radius:20px; white-space:nowrap;">
+          ✨ earned all-time: <span id="funTotalAmount" style="font-weight:600; color:var(--ink);">£0.00</span>
+        </div>
+      </div>
+
+      <div class="stub" id="stub">
+        <div>
+          <p class="eyebrow" id="stubPeriodName">No pay period selected</p>
+          <h3 id="stubRange">—</h3>
+          <p class="meta" id="stubDaysLeft"></p>
+        </div>
+        <div>
+          <p class="eyebrow" id="periodTotalLabel" style="text-align:right;">Period total</p>
+          <div class="amount" id="stubAmount">£0.00</div>
+        </div>
+        <div style="border-left:1px solid rgba(255,255,255,0.35); padding-left:20px;">
+          <p class="eyebrow" id="jobTotalLabel" style="text-align:right;">All-time total</p>
+          <div class="amount" id="jobTotalAmount" style="font-size:26px;">£0.00</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cal-header">
+          <div class="month-label" id="monthLabel"></div>
+          <div class="cal-nav">
+            <button id="prevMonth">‹</button>
+            <button id="todayBtn" style="width:auto; padding:0 12px; font-size:12px;">Today</button>
+            <button id="nextMonth">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div id="dayDetail"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-jobs">
+      <h2 class="page-title">Jobs</h2>
+      <p class="page-sub">Add each job with its hourly rate. Turn on holiday accrual if you want it added per hour worked.</p>
+
+      <div class="card">
+        <h3>Your jobs</h3>
+        <div id="jobsList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Add a job</h3>
+        <form class="inline" id="jobForm">
+          <label class="field">Job name
+            <input type="text" id="jobName" placeholder="e.g. Cafe Nero" required>
+          </label>
+          <label class="field">Rate (£/hr)
+            <input type="number" id="jobRate" placeholder="11.50" step="0.01" min="0" required>
+          </label>
+          <label class="field" style="flex-basis:100%;">Colour
+            <div class="color-pick" id="jobColorPick"></div>
+          </label>
+          <label class="field checkline" style="flex-basis:100%;">
+            <input type="checkbox" id="jobHoliday">
+            Accrue holiday pay — minutes per hour:
+            <input type="number" id="jobHolidayMins" placeholder="7" min="0" style="width:70px;" disabled>
+          </label>
+          <button type="submit" class="btn" style="flex-basis:100%;">Add job</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-periods">
+      <h2 class="page-title">Pay periods</h2>
+      <p class="page-sub">Add your own pay periods manually — name them and set the date range you want tracked.</p>
+
+      <div class="card">
+        <h3>Your periods</h3>
+        <div id="periodsList"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="periodFormTitle">Add a period</h3>
+        <form class="inline" id="periodForm">
+          <label class="field">Job
+            <select id="periodJob" required></select>
+          </label>
+          <label class="field">Label
+            <input type="text" id="periodName" placeholder="e.g. July payslip" required>
+          </label>
+          <label class="field">From
+            <input type="text" id="periodStart" placeholder="dd/mm/yyyy" required>
+          </label>
+          <label class="field">To
+            <input type="text" id="periodEnd" placeholder="dd/mm/yyyy" required>
+          </label>
+          <button type="submit" class="btn" id="periodSubmitBtn" style="flex-basis:auto;">Add period</button>
+          <button type="button" class="btn ghost" id="periodCancelBtn" style="display:none; flex-basis:auto;">Cancel</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-stats">
+      <h2 class="page-title">Stats</h2>
+      <p class="page-sub">How your earnings have trended month to month.</p>
+      <div class="card">
+        <h3>Monthly earnings</h3>
+        <p class="sub">Total pay (including holiday pay) by calendar month, across all jobs combined.</p>
+        <canvas id="trendChart" height="220"></canvas>
+        <p class="empty" id="statsEmpty" style="display:none;">Log some shifts to see your trend here.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  const store = {
+    get(k, fallback){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+    set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+  };
+
+  const THEME_JOB_COLORS = {
+    blush:    ['#D98CA0','#C9A6D9','#9BC2C9','#E8B79A','#A8C89B'],
+    lavender: ['#A98CD9','#D98CB8','#8CB8D9','#C9B79A','#9ED9C6'],
+    sage:     ['#8FAE7E','#D9B98C','#8CA9D9','#D98CA0','#C9A6D9'],
+    blue:     ['#7FAAD1','#8CC2C9','#B79AD9','#E8B79A','#7EC79E'],
+    peach:    ['#E8A26E','#E8C08C','#D98CA0','#8CB8B0','#C9A6D9'],
+    mint:     ['#6EBBA0','#8FC98C','#7FAAD1','#D9B98C','#C9A6D9']
+  };
+
+  let jobs = store.get('wl_jobs', []);
+  let shifts = store.get('wl_shifts', []);
+  let periods = store.get('wl_periods', []);
+  let theme = store.get('wl_theme', 'blush');
+  let selectedPeriodId = store.get('wl_selected_period', null);
+  let editingPeriodId = null;
+  let editingShift = null;
+  let viewYear, viewMonth;
+  let expandedDate = null;
+
+  const today = new Date();
+  viewYear = today.getFullYear(); viewMonth = today.getMonth();
+
+  const fmtMoney = n => '£' + (Math.round(n*100)/100).toFixed(2);
+  const uid = () => Math.random().toString(36).slice(2,9);
+  const jobById = id => jobs.find(j=>j.id===id);
+
+  function applyTheme(t){
+    theme = t;
+    document.body.setAttribute('data-theme', t);
+    store.set('wl_theme', t);
+    document.querySelectorAll('.theme-dot').forEach(d=> d.classList.toggle('active', d.dataset.themeBtn===t));
+    renderJobColorPicker();
+  }
+
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+      document.getElementById('sidebar').classList.remove('open');
+      if(btn.dataset.panel === 'stats') renderTrendChart();
+    });
+  });
+  document.getElementById('menuToggle').addEventListener('click', ()=>{
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+  document.querySelectorAll('.theme-dot').forEach(d=>{
+    d.addEventListener('click', ()=> applyTheme(d.dataset.themeBtn));
+  });
+  document.querySelectorAll('[data-theme-btn2]').forEach(d=>{
+    d.addEventListener('click', ()=> applyTheme(d.dataset.themeBtn2));
+  });
+
+  let pickedColor = THEME_JOB_COLORS[theme][0];
+  function renderJobColorPicker(){
+    pickedColor = THEME_JOB_COLORS[theme][0];
+    const wrap = document.getElementById('jobColorPick');
+    wrap.innerHTML = THEME_JOB_COLORS[theme].map((c,i)=>
+      `<div class="cdot ${i===0?'sel':''}" style="background:${c}" data-color="${c}"></div>`
+    ).join('');
+    wrap.querySelectorAll('.cdot').forEach(dot=>{
+      dot.addEventListener('click', ()=>{
+        wrap.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+        dot.classList.add('sel');
+        pickedColor = dot.dataset.color;
+      });
+    });
+  }
+
+  function renderJobs(){
+    const list = document.getElementById('jobsList');
+    list.innerHTML = jobs.length ? '' : '<p class="empty">No jobs yet — add one below.</p>';
+    jobs.forEach(j=>{
+      const row = document.createElement('div');
+      row.className='job-row';
+      row.innerHTML = `
+        <span class="swatch" style="background:${j.color}"></span>
+        <span class="name">${j.name}</span>
+        <span class="rate">${fmtMoney(j.rate)}/hr${j.holiday ? ` · ${j.holidayMins}m hol/hr` : ''}</span>
+        <button class="del" data-id="${j.id}" title="Remove job">✕</button>
+      `;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.del').forEach(btn=>{
+      btn.onclick = ()=>{
+        if(!confirm('Remove this job? Logged shifts for it stay in history.')) return;
+        jobs = jobs.filter(j=>j.id!==btn.dataset.id);
+        store.set('wl_jobs', jobs);
+        renderJobs(); renderCalendar(); renderStub(); renderPeriodJobSelect(); renderPeriods(); renderCalPeriodSelect();
+      };
+    });
+  }
+
+  document.getElementById('jobHoliday').addEventListener('change', e=>{
+    document.getElementById('jobHolidayMins').disabled = !e.target.checked;
+  });
+
+  document.getElementById('jobForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const name = document.getElementById('jobName').value.trim();
+    const rate = parseFloat(document.getElementById('jobRate').value);
+    const holiday = document.getElementById('jobHoliday').checked;
+    const holidayMins = parseFloat(document.getElementById('jobHolidayMins').value) || 0;
+    if(!name || isNaN(rate)) return;
+    jobs.push({ id: uid(), name, rate, color: pickedColor, holiday, holidayMins });
+    store.set('wl_jobs', jobs);
+    e.target.reset();
+    document.getElementById('jobHolidayMins').disabled = true;
+    renderJobColorPicker();
+    renderJobs(); renderCalendar(); renderStub(); renderPeriodJobSelect();
+  });
+
+  function renderPeriods(){
+    const list = document.getElementById('periodsList');
+    list.innerHTML = periods.length ? '' : '<p class="empty">No pay periods yet — add one below.</p>';
+    periods.slice().sort((a,b)=> b.start.localeCompare(a.start)).forEach(p=>{
+      const total = totalForPeriod(p);
+      const j = jobById(p.jobId);
+      const row = document.createElement('div');
+      row.className = 'period-row';
+      row.style.outline = p.id===selectedPeriodId ? '2px solid var(--accent)' : 'none';
+      row.innerHTML = `
+        <div>
+          <div class="pname"><span class="swatch" style="background:${j?j.color:'#ccc'}; display:inline-block; margin-right:6px;"></span>${p.name} <span style="font-weight:400; color:var(--ink-soft); font-size:12px;">· ${j?j.name:'Removed job'}</span></div>
+          <div class="prange">${fmtDate(p.start)} – ${fmtDate(p.end)}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div class="ptotal">${fmtMoney(total)}</div>
+          <button class="btn ghost" style="padding:6px 12px; font-size:12px;" data-select="${p.id}">${p.id===selectedPeriodId?'Viewing':'View'}</button>
+          <button class="btn ghost" style="padding:6px 12px; font-size:12px;" data-edit="${p.id}">Edit</button>
+          <button class="del" data-id="${p.id}" title="Delete">✕</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('[data-select]').forEach(btn=>{
+      btn.onclick = ()=>{
+        selectedPeriodId = btn.dataset.select;
+        store.set('wl_selected_period', selectedPeriodId);
+        renderPeriods(); renderCalPeriodSelect(); renderStub(); renderCalendar();
+      };
+    });
+    list.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const p = periods.find(x=>x.id===btn.dataset.edit);
+        if(!p) return;
+        editingPeriodId = p.id;
+        document.getElementById('periodJob').value = p.jobId;
+        document.getElementById('periodName').value = p.name;
+        document.getElementById('periodStart').value = fmtDate(p.start);
+        document.getElementById('periodEnd').value = fmtDate(p.end);
+        document.getElementById('periodSubmitBtn').textContent = 'Save changes';
+        document.getElementById('periodCancelBtn').style.display = 'inline-block';
+        document.getElementById('periodFormTitle').textContent = 'Edit period';
+        document.getElementById('periodForm').scrollIntoView({behavior:'smooth', block:'center'});
+      };
+    });
+    list.querySelectorAll('.del').forEach(btn=>{
+      btn.onclick = ()=>{
+        if(!confirm('Delete this pay period? Shifts stay in the calendar.')) return;
+        periods = periods.filter(p=>p.id!==btn.dataset.id);
+        if(selectedPeriodId===btn.dataset.id) selectedPeriodId = periods[0]?.id || null;
+        store.set('wl_periods', periods);
+        store.set('wl_selected_period', selectedPeriodId);
+        renderPeriods(); renderCalPeriodSelect(); renderStub(); renderCalendar();
+      };
+    });
+  }
+  function renderPeriodJobSelect(){
+    const sel = document.getElementById('periodJob');
+    const prevVal = sel.value;
+    sel.innerHTML = jobs.map(j=>`<option value="${j.id}">${j.name}</option>`).join('') || '<option disabled selected>Add a job first</option>';
+    if(jobs.some(j=>j.id===prevVal)) sel.value = prevVal;
+  }
+
+  function renderCalPeriodSelect(){
+    const sel = document.getElementById('calPeriodSelect');
+    sel.innerHTML = '<option value="">No pay period selected</option>' +
+      periods.slice().sort((a,b)=> b.start.localeCompare(a.start)).map(p=>{
+        const j = jobById(p.jobId);
+        return `<option value="${p.id}">${p.name} · ${j?j.name:'Removed job'} (${fmtDate(p.start)}–${fmtDate(p.end)})</option>`;
+      }).join('');
+    sel.value = selectedPeriodId || '';
+  }
+  document.getElementById('calPeriodSelect').addEventListener('change', e=>{
+    selectedPeriodId = e.target.value || null;
+    store.set('wl_selected_period', selectedPeriodId);
+    renderPeriods(); renderCalPeriodSelect(); renderStub(); renderCalendar();
+  });
+
+  function fmtDate(d){
+    const dt = new Date(d+'T12:00:00');
+    const dd = String(dt.getDate()).padStart(2,'0');
+    const mm = String(dt.getMonth()+1).padStart(2,'0');
+    const yyyy = dt.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  function parseUKDate(str){
+    const m = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(!m) return null;
+    const [_, dd, mm, yyyy] = m;
+    const d = parseInt(dd), mo = parseInt(mm), y = parseInt(yyyy);
+    if(mo<1||mo>12||d<1||d>31) return null;
+    const dt = new Date(y, mo-1, d);
+    if(dt.getMonth() !== mo-1) return null; // catches invalid days like 31/02
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`; // ISO for storage
+  }
+  function attachDateAutoFormat(input){
+    input.addEventListener('input', ()=>{
+      let v = input.value.replace(/[^\d]/g,'').slice(0,8);
+      if(v.length >= 5) v = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
+      else if(v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
+      input.value = v;
+    });
+  }
+  function attachTimeAutoFormat(input){
+    input.addEventListener('input', ()=>{
+      let v = input.value.replace(/[^\d]/g,'').slice(0,4);
+      if(v.length >= 3) v = v.slice(0,2)+':'+v.slice(2);
+      input.value = v;
+    });
+  }
+  function isValidTime(str){
+    const m = String(str).trim().match(/^(\d{2}):(\d{2})$/);
+    if(!m) return false;
+    const h = parseInt(m[1]), mi = parseInt(m[2]);
+    return h>=0 && h<=23 && mi>=0 && mi<=59;
+  }
+  function allTimeTotal(){
+    return shifts.reduce((sum,s)=>{
+      const {pay, holiday} = computeShift(s);
+      return sum + pay + holiday;
+    },0);
+  }
+  function allTimeTotalForJob(jobId){
+    return shifts.filter(s=>s.jobId===jobId).reduce((sum,s)=>{
+      const {pay, holiday} = computeShift(s);
+      return sum + pay + holiday;
+    },0);
+  }
+
+  attachDateAutoFormat(document.getElementById('periodStart'));
+  attachDateAutoFormat(document.getElementById('periodEnd'));
+
+  document.getElementById('periodForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const jobId = document.getElementById('periodJob').value;
+    const name = document.getElementById('periodName').value.trim();
+    const start = parseUKDate(document.getElementById('periodStart').value);
+    const end = parseUKDate(document.getElementById('periodEnd').value);
+    if(!jobId || !name || !start || !end){ alert('Fill in job, label, and both dates as dd/mm/yyyy.'); return; }
+    if(end < start){ alert('End date should be after start date.'); return; }
+    if(editingPeriodId){
+      const p = periods.find(x=>x.id===editingPeriodId);
+      if(p){ p.jobId=jobId; p.name=name; p.start=start; p.end=end; }
+      store.set('wl_periods', periods);
+      resetPeriodForm();
+    } else {
+      const p = { id: uid(), jobId, name, start, end };
+      periods.push(p);
+      store.set('wl_periods', periods);
+      if(!selectedPeriodId) { selectedPeriodId = p.id; store.set('wl_selected_period', selectedPeriodId); }
+      e.target.reset();
+    }
+    renderPeriods(); renderCalPeriodSelect(); renderStub(); renderCalendar();
+  });
+
+  function resetPeriodForm(){
+    editingPeriodId = null;
+    document.getElementById('periodForm').reset();
+    document.getElementById('periodSubmitBtn').textContent = 'Add period';
+    document.getElementById('periodCancelBtn').style.display = 'none';
+    document.getElementById('periodFormTitle').textContent = 'Add a period';
+  }
+  document.getElementById('periodCancelBtn').addEventListener('click', resetPeriodForm);
+
+  function totalForPeriod(p){
+    if(!p) return 0;
+    return shifts.filter(s=> s.jobId === p.jobId && s.date >= p.start && s.date <= p.end)
+      .reduce((sum,s)=>{
+        const {pay, holiday} = computeShift(s);
+        return sum + pay + holiday;
+      },0);
+  }
+
+  function renderStub(){
+    const p = periods.find(x=>x.id===selectedPeriodId);
+    document.getElementById('funTotalAmount').textContent = fmtMoney(allTimeTotal());
+    if(!p){
+      document.getElementById('stubPeriodName').textContent = 'No pay period selected';
+      document.getElementById('stubRange').textContent = 'Add one in Pay periods';
+      document.getElementById('stubAmount').textContent = fmtMoney(0);
+      document.getElementById('stubDaysLeft').textContent = '';
+      document.getElementById('jobTotalLabel').textContent = 'All-time total';
+      document.getElementById('jobTotalAmount').textContent = fmtMoney(0);
+      return;
+    }
+    document.getElementById('stubPeriodName').textContent = p.name;
+    document.getElementById('stubRange').textContent = `${fmtDate(p.start)} – ${fmtDate(p.end)}`;
+    const j = jobById(p.jobId);
+    document.getElementById('periodTotalLabel').textContent = j ? `Period total · ${j.name}` : 'Period total';
+    document.getElementById('stubAmount').textContent = fmtMoney(totalForPeriod(p));
+    const end = new Date(p.end+'T12:00:00');
+    const daysLeft = Math.ceil((end - new Date()) / 86400000);
+    document.getElementById('stubDaysLeft').textContent =
+      daysLeft > 0 ? `${daysLeft} day${daysLeft===1?'':'s'} left` : daysLeft===0 ? 'Ends today' : 'Period ended';
+    document.getElementById('jobTotalLabel').textContent = j ? `All-time · ${j.name}` : 'All-time total';
+    document.getElementById('jobTotalAmount').textContent = fmtMoney(j ? allTimeTotalForJob(j.id) : allTimeTotal());
+  }
+
+  function hoursBetween(start, end){
+    const [sh,sm] = start.split(':').map(Number);
+    const [eh,em] = end.split(':').map(Number);
+    let mins = (eh*60+em) - (sh*60+sm);
+    if(mins < 0) mins += 24*60;
+    return Math.round((mins/60)*100)/100;
+  }
+  function computeShift(s){
+    const j = jobById(s.jobId);
+    if(!j) return { pay:0, holiday:0 };
+    const pay = s.hours * j.rate;
+    const holiday = j.holiday ? (s.hours * (j.holidayMins/60) * j.rate) : 0;
+    return { pay, holiday };
+  }
+
+  const DOWS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  function renderCalendar(){
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    DOWS.forEach(d=>{
+      const el = document.createElement('div');
+      el.className='cal-dow'; el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    document.getElementById('monthLabel').textContent =
+      new Date(viewYear, viewMonth, 1).toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    let startOffset = firstDay.getDay() - 1;
+    if(startOffset < 0) startOffset = 6;
+    const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+    for(let i=0;i<startOffset;i++){
+      const e = document.createElement('div');
+      e.className='cal-day empty';
+      grid.appendChild(e);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dayShifts = shifts.filter(s=>s.date===dateStr);
+      const cell = document.createElement('div');
+      cell.className = 'cal-day';
+      const isToday = dateStr === `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      if(isToday) cell.classList.add('today');
+      if(expandedDate === dateStr) cell.classList.add('expanded');
+
+      let chips = '';
+      dayShifts.slice(0,2).forEach(s=>{
+        const j = jobById(s.jobId);
+        chips += `<span class="shift-chip" style="background:${j?j.color:'#ccc'}">${j?j.name:'—'} ${s.hours}h</span>`;
+      });
+      if(dayShifts.length > 2) chips += `<span class="more">+${dayShifts.length-2} more</span>`;
+
+      const selPeriod = periods.find(x=>x.id===selectedPeriodId);
+      let dots = '';
+      if(selPeriod && (selPeriod.start===dateStr || selPeriod.end===dateStr)){
+        const j = jobById(selPeriod.jobId);
+        dots = `<span class="cutoff-dot" style="background:${j?j.color:'#B4553F'};" title="${selPeriod.name} (${selPeriod.start===dateStr?'start':'end'})"></span>`;
+      }
+
+      cell.innerHTML = `<span class="daynum">${d}</span>${chips}${dots}`;
+      cell.addEventListener('click', ()=>{
+        expandedDate = (expandedDate === dateStr) ? null : dateStr;
+        renderCalendar();
+      });
+      grid.appendChild(cell);
+    }
+
+    const detailWrap = document.getElementById('dayDetail');
+    detailWrap.innerHTML = '';
+    if(expandedDate){
+      const dayShifts = shifts.filter(s=>s.date===expandedDate);
+      detailWrap.appendChild(buildDayExpand(expandedDate, dayShifts));
+    }
+  }
+
+  function buildDayExpand(dateStr, dayShifts){
+    const wrap = document.createElement('div');
+    wrap.className = 'day-expand';
+    const niceDate = new Date(dateStr+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+
+    let entriesHtml = dayShifts.map(s=>{
+      const j = jobById(s.jobId);
+      const {pay, holiday} = computeShift(s);
+      return `
+        <div class="shift-entry">
+          <span class="swatch" style="background:${j?j.color:'#ccc'}"></span>
+          <div class="info">${j?j.name:'Removed job'} · ${s.start}–${s.end} · ${s.hours}h</div>
+          <div class="pay">${fmtMoney(pay + holiday)}</div>
+          <button class="del" data-eid="${s.id}" title="Edit" style="color:var(--ink-soft); background:none; border:none; cursor:pointer; font-size:13px;">✎</button>
+          <button class="del" data-sid="${s.id}">✕</button>
+        </div>`;
+    }).join('') || '<p class="empty" style="padding:10px 0;">No shifts logged this day.</p>';
+
+    const isEditingHere = editingShift && editingShift.date === dateStr;
+
+    wrap.innerHTML = `
+      <h4>${niceDate}</h4>
+      <div id="dayEntries">${entriesHtml}</div>
+      <form class="inline" id="dayShiftForm">
+        <label class="field">Job
+          <select id="dsJob">${jobs.map(j=>`<option value="${j.id}">${j.name}</option>`).join('') || '<option disabled selected>Add a job first</option>'}</select>
+        </label>
+        <label class="field">Start time
+          <input type="text" id="dsStart" placeholder="HH:MM" required>
+        </label>
+        <label class="field">End time
+          <input type="text" id="dsEnd" placeholder="HH:MM" required>
+        </label>
+        <button type="submit" class="btn" id="dsSubmitBtn" ${jobs.length?'':'disabled'}>${isEditingHere ? 'Save changes' : 'Add shift'}</button>
+        <button type="button" class="btn ghost" id="dsCancelBtn" style="${isEditingHere ? '' : 'display:none;'}">Cancel</button>
+      </form>
+    `;
+
+    if(isEditingHere){
+      wrap.querySelector('#dsJob').value = editingShift.jobId;
+      wrap.querySelector('#dsStart').value = editingShift.start;
+      wrap.querySelector('#dsEnd').value = editingShift.end;
+    }
+
+    attachTimeAutoFormat(wrap.querySelector('#dsStart'));
+    attachTimeAutoFormat(wrap.querySelector('#dsEnd'));
+
+    wrap.querySelectorAll('[data-eid]').forEach(btn=>{
+      btn.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const s = shifts.find(x=>x.id===btn.dataset.eid);
+        if(!s) return;
+        editingShift = { id: s.id, date: s.date, jobId: s.jobId, start: s.start, end: s.end };
+        renderCalendar();
+      });
+    });
+
+    wrap.querySelectorAll('[data-sid]').forEach(btn=>{
+      btn.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        shifts = shifts.filter(s=>s.id!==btn.dataset.sid);
+        store.set('wl_shifts', shifts);
+        if(editingShift && editingShift.id===btn.dataset.sid) editingShift = null;
+        renderCalendar(); renderStub();
+      });
+    });
+
+    wrap.querySelector('#dsCancelBtn').addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      editingShift = null;
+      renderCalendar();
+    });
+
+    wrap.querySelector('#dayShiftForm').addEventListener('submit', (ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      const jobId = wrap.querySelector('#dsJob').value;
+      const start = wrap.querySelector('#dsStart').value;
+      const end = wrap.querySelector('#dsEnd').value;
+      if(!jobId || !start || !end) return;
+      if(!isValidTime(start) || !isValidTime(end)){ alert('Enter times as HH:MM in 24-hour format, e.g. 09:00 or 17:30.'); return; }
+      const hours = hoursBetween(start, end);
+      if(hours <= 0){ alert('End time must be after start time.'); return; }
+      if(isEditingHere){
+        const s = shifts.find(x=>x.id===editingShift.id);
+        if(s){ s.jobId=jobId; s.start=start; s.end=end; s.hours=hours; }
+        editingShift = null;
+      } else {
+        shifts.push({ id: uid(), jobId, date: dateStr, start, end, hours });
+      }
+      store.set('wl_shifts', shifts);
+      renderCalendar(); renderStub();
+    });
+
+    wrap.addEventListener('click', ev=> ev.stopPropagation());
+    return wrap;
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', ()=>{
+    viewMonth--; if(viewMonth<0){ viewMonth=11; viewYear--; }
+    expandedDate = null;
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click', ()=>{
+    viewMonth++; if(viewMonth>11){ viewMonth=0; viewYear++; }
+    expandedDate = null;
+    renderCalendar();
+  });
+  document.getElementById('todayBtn').addEventListener('click', ()=>{
+    viewYear = today.getFullYear(); viewMonth = today.getMonth();
+    expandedDate = null;
+    renderCalendar();
+  });
+
+  function renderTrendChart(){
+    const canvas = document.getElementById('trendChart');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.parentElement.clientWidth - 44;
+    const cssHeight = 220;
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    canvas.style.width = cssWidth + 'px';
+    canvas.style.height = cssHeight + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,cssWidth,cssHeight);
+
+    if(shifts.length===0){
+      document.getElementById('statsEmpty').style.display = 'block';
+      return;
+    }
+    document.getElementById('statsEmpty').style.display = 'none';
+
+    const totalsByMonth = {};
+    shifts.forEach(s=>{
+      const key = s.date.slice(0,7);
+      const {pay, holiday} = computeShift(s);
+      totalsByMonth[key] = (totalsByMonth[key]||0) + pay + holiday;
+    });
+    const sortedKeys = Object.keys(totalsByMonth).sort();
+    const firstKey = sortedKeys[0], lastKey = sortedKeys[sortedKeys.length-1];
+    const allMonths = [];
+    let cur = new Date(firstKey+'-01T12:00:00');
+    const end = new Date(lastKey+'-01T12:00:00');
+    while(cur <= end){
+      const key = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}`;
+      allMonths.push({ key, total: totalsByMonth[key]||0 });
+      cur.setMonth(cur.getMonth()+1);
+    }
+    const data = allMonths.length > 12 ? allMonths.slice(-12) : allMonths;
+
+    const maxVal = Math.max(...data.map(d=>d.total), 1);
+    const padLeft = 32, padBottom = 30, padTop = 20;
+    const chartH = cssHeight - padBottom - padTop;
+    const chartW = cssWidth - padLeft*2;
+    const stepX = data.length>1 ? chartW/(data.length-1) : 0;
+
+    const lineColor = getComputedStyle(document.body).getPropertyValue('--accent-deep').trim() || '#B8617A';
+    const fillColor = getComputedStyle(document.body).getPropertyValue('--accent-soft').trim() || '#F3D3DC';
+    const inkColor = getComputedStyle(document.body).getPropertyValue('--ink').trim() || '#333';
+    const inkSoft = getComputedStyle(document.body).getPropertyValue('--ink-soft').trim() || '#888';
+    const lineColorVal = getComputedStyle(document.body).getPropertyValue('--line').trim() || '#ddd';
+
+    ctx.strokeStyle = lineColorVal;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, padTop+chartH);
+    ctx.lineTo(padLeft+chartW, padTop+chartH);
+    ctx.stroke();
+
+    const points = data.map((d,i)=>({
+      x: padLeft + i*stepX,
+      y: padTop + chartH - (d.total/maxVal)*chartH,
+      total: d.total,
+      key: d.key
+    }));
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, padTop+chartH);
+    points.forEach(p=> ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length-1].x, padTop+chartH);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    ctx.beginPath();
+    points.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    points.forEach((p,i)=>{
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.5, 0, Math.PI*2);
+      ctx.fillStyle = lineColor;
+      ctx.fill();
+
+      if(data.length<=8 || i===points.length-1 || i===0){
+        ctx.fillStyle = inkColor;
+        ctx.font = '600 11px Quicksand, sans-serif';
+        ctx.textAlign = i===0 ? 'left' : (i===points.length-1 ? 'right' : 'center');
+        ctx.fillText(fmtMoney(p.total), p.x, Math.max(padTop-6, p.y-10));
+      }
+
+      const monthLabel = new Date(p.key+'-01T12:00:00').toLocaleDateString('en-GB',{month:'short'});
+      ctx.fillStyle = inkSoft;
+      ctx.font = '500 10.5px Inter, sans-serif';
+      ctx.textAlign = i===0 ? 'left' : (i===points.length-1 ? 'right' : 'center');
+      ctx.fillText(monthLabel, p.x, padTop+chartH+18);
+    });
+  }
+  window.addEventListener('resize', ()=>{ if(document.getElementById('panel-stats').classList.contains('active')) renderTrendChart(); });
+
+  applyTheme(theme);
+  if(!selectedPeriodId && periods.length) selectedPeriodId = periods[0].id;
+  renderJobs();
+  renderPeriodJobSelect();
+  renderPeriods(); renderCalPeriodSelect();
+  renderCalendar();
+  renderStub();
+  renderTrendChart();
+})();
+</script>
+</body>
+</html>
