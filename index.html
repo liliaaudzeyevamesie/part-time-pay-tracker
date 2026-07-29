@@ -195,7 +195,7 @@
 
     <button class="nav-item active" data-panel="calendar"><span class="ic">📅</span>Calendar</button>
     <button class="nav-item" data-panel="jobs"><span class="ic">💼</span>Jobs</button>
-    <button class="nav-item" data-panel="periods"><span class="ic">🗂️</span>Pay periods</button>
+    <button class="nav-item" data-panel="periods"><span class="ic">🗂️</span>payroll periods</button>
     <button class="nav-item" data-panel="stats"><span class="ic">📊</span>Stats</button>
 
     <hr>
@@ -214,11 +214,11 @@
 
     <section class="panel active" id="panel-calendar">
       <h2 class="page-title">Calendar</h2>
-      <p class="page-sub">Click a day to log a shift by start and end time. Hours are calculated for you.</p>
+      <p class="page-sub">Click a day to log a shift by start and end time.</p>
 
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
         <label class="field" style="flex:none; min-width:220px;">Viewing period
-          <select id="calPeriodSelect"><option value="">No pay period selected</option></select>
+          <select id="calPeriodSelect"><option value="">No payroll period selected</option></select>
         </label>
         <div id="funTotal" style="font-family:'IBM Plex Mono', 'Inter', monospace; font-size:11.5px; color:var(--ink-soft); background:var(--bg-alt); padding:6px 12px; border-radius:20px; white-space:nowrap;">
           ✨ earned all-time: <span id="funTotalAmount" style="font-weight:600; color:var(--ink);">£0.00</span>
@@ -227,8 +227,8 @@
 
       <div class="stub" id="stub">
         <div>
-          <p class="eyebrow" id="stubPeriodName">No pay period selected</p>
-          <h3 id="stubRange">—</h3>
+          <p class="eyebrow" id="stubPeriodName">No payroll period selected</p>
+          <h3 id="stubRange">-</h3>
           <p class="meta" id="stubDaysLeft"></p>
         </div>
         <div>
@@ -278,7 +278,7 @@
           </label>
           <label class="field checkline" style="flex-basis:100%;">
             <input type="checkbox" id="jobHoliday">
-            Accrue holiday pay — minutes per hour:
+            Accrue holiday pay - minutes per hour:
             <input type="number" id="jobHolidayMins" placeholder="7" min="0" style="width:70px;" disabled>
           </label>
           <button type="submit" class="btn" style="flex-basis:100%;">Add job</button>
@@ -287,8 +287,8 @@
     </section>
 
     <section class="panel" id="panel-periods">
-      <h2 class="page-title">Pay periods</h2>
-      <p class="page-sub">Add your own pay periods manually — name them and set the date range you want tracked.</p>
+      <h2 class="page-title">Payroll periods</h2>
+      <p class="page-sub">Add your own payroll periods manually - name them and set the date range you want tracked.</p>
 
       <div class="card">
         <h3>Your periods</h3>
@@ -409,7 +409,7 @@
 
   function renderJobs(){
     const list = document.getElementById('jobsList');
-    list.innerHTML = jobs.length ? '' : '<p class="empty">No jobs yet — add one below.</p>';
+    list.innerHTML = jobs.length ? '' : '<p class="empty">No jobs yet - add one below.</p>';
     jobs.forEach(j=>{
       const row = document.createElement('div');
       row.className='job-row';
@@ -452,7 +452,7 @@
 
   function renderPeriods(){
     const list = document.getElementById('periodsList');
-    list.innerHTML = periods.length ? '' : '<p class="empty">No pay periods yet — add one below.</p>';
+    list.innerHTML = periods.length ? '' : '<p class="empty">No payroll periods yet - add one below.</p>';
     periods.slice().sort((a,b)=> b.start.localeCompare(a.start)).forEach(p=>{
       const total = totalForPeriod(p);
       const j = jobById(p.jobId);
@@ -497,7 +497,7 @@
     });
     list.querySelectorAll('.del').forEach(btn=>{
       btn.onclick = ()=>{
-        if(!confirm('Delete this pay period? Shifts stay in the calendar.')) return;
+        if(!confirm('Delete this payroll period? Shifts stay in the calendar.')) return;
         periods = periods.filter(p=>p.id!==btn.dataset.id);
         if(selectedPeriodId===btn.dataset.id) selectedPeriodId = periods[0]?.id || null;
         store.set('wl_periods', periods);
@@ -515,7 +515,7 @@
 
   function renderCalPeriodSelect(){
     const sel = document.getElementById('calPeriodSelect');
-    sel.innerHTML = '<option value="">No pay period selected</option>' +
+    sel.innerHTML = '<option value="">No payroll period selected</option>' +
       periods.slice().sort((a,b)=> b.start.localeCompare(a.start)).map(p=>{
         const j = jobById(p.jobId);
         return `<option value="${p.id}">${p.name} · ${j?j.name:'Removed job'} (${fmtDate(p.start)}–${fmtDate(p.end)})</option>`;
@@ -627,8 +627,8 @@
     const p = periods.find(x=>x.id===selectedPeriodId);
     document.getElementById('funTotalAmount').textContent = fmtMoney(allTimeTotal());
     if(!p){
-      document.getElementById('stubPeriodName').textContent = 'No pay period selected';
-      document.getElementById('stubRange').textContent = 'Add one in Pay periods';
+      document.getElementById('stubPeriodName').textContent = 'No payroll period selected';
+      document.getElementById('stubRange').textContent = 'Add one in payroll periods';
       document.getElementById('stubAmount').textContent = fmtMoney(0);
       document.getElementById('stubDaysLeft').textContent = '';
       document.getElementById('jobTotalLabel').textContent = 'All-time total';
@@ -699,7 +699,7 @@
       let chips = '';
       dayShifts.slice(0,2).forEach(s=>{
         const j = jobById(s.jobId);
-        chips += `<span class="shift-chip" style="background:${j?j.color:'#ccc'}">${j?j.name:'—'} ${s.hours}h</span>`;
+        chips += `<span class="shift-chip" style="background:${j?j.color:'#ccc'}">${j?j.name:'-'} ${s.hours}h</span>`;
       });
       if(dayShifts.length > 2) chips += `<span class="more">+${dayShifts.length-2} more</span>`;
 
